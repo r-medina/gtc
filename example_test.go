@@ -13,12 +13,11 @@ import (
 func Example() {
 	// data contains the raw genesis block
 	r := bytes.NewReader(data)
-	blocks, err := gtc.Decode(r)
+	block, err := gtc.DecodeBlock(r)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic(err)
 	}
-	fmt.Printf("%v\n", blocks[0])
+	fmt.Printf("%v\n", block)
 
 	// Output: Version: 1
 	// Previous Block: 0000000000000000000000000000000000000000000000000000000000000000
@@ -37,56 +36,52 @@ func ExampleJSON() {
 	// headers.
 
 	r := bytes.NewReader(data)
-	blocks, err := gtc.Decode(r)
+	block, err := gtc.DecodeBlock(r)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic(err)
 	}
 
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(blocks); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err := encoder.Encode(block); err != nil {
+		panic(err)
 	}
 
-	// Output: [
-	//   {
-	//     "ver": 1,
-	//     "prev_block": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-	//     "mrkl_root": "O6Pt/Xp7ErJ6xyw+Z3aPYX/IG8OIilEyOp+4qkseXko=",
-	//     "time": 1231006505,
-	//     "bits": 486604799,
-	//     "nonce": 2083236893,
-	//     "n_tx": 1,
-	//     "tx": [
-	//       {
-	//         "ver": 1,
-	//         "n_in": 1,
-	//         "in": [
-	//           {
-	//             "prev_out": {
-	//               "hash": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-	//               "index": 4294967295
-	//             },
-	//             "script_len": 77,
-	//             "script": "BP//AB0BBEVUaGUgVGltZXMgMDMvSmFuLzIwMDkgQ2hhbmNlbGxvciBvbiBicmluayBvZiBzZWNvbmQgYmFpbG91dCBmb3IgYmFua3M=",
-	//             "seq": 4294967295
-	//           }
-	//         ],
-	//         "n_out": 1,
-	//         "out": [
-	//           {
-	//             "Value": 5000000000,
-	//             "PkScriptLength": 67,
-	//             "PkScript": "QQRniv2w/lVIJxln8aZxMLcQXNaoKOA5CaZ5YuDqH2Hetkn2vD9M7zjE81UE5R7BEt5cOE33uguNV4pMcCtr8R1frA=="
-	//           }
-	//         ],
-	//         "lock_time": 0
-	//       }
-	//     ]
-	//   }
-	// ]
+	// Output: {
+	//   "ver": 1,
+	//   "prev_block": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+	//   "mrkl_root": "O6Pt/Xp7ErJ6xyw+Z3aPYX/IG8OIilEyOp+4qkseXko=",
+	//   "time": 1231006505,
+	//   "bits": 486604799,
+	//   "nonce": 2083236893,
+	//   "n_tx": 1,
+	//   "tx": [
+	//     {
+	//       "ver": 1,
+	//       "n_in": 1,
+	//       "in": [
+	//         {
+	//           "prev_out": {
+	//             "hash": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+	//             "index": 4294967295
+	//           },
+	//           "script_len": 77,
+	//           "script": "BP//AB0BBEVUaGUgVGltZXMgMDMvSmFuLzIwMDkgQ2hhbmNlbGxvciBvbiBicmluayBvZiBzZWNvbmQgYmFpbG91dCBmb3IgYmFua3M=",
+	//           "seq": 4294967295
+	//         }
+	//       ],
+	//       "n_out": 1,
+	//       "out": [
+	//         {
+	//           "Value": 5000000000,
+	//           "PkScriptLength": 67,
+	//           "PkScript": "QQRniv2w/lVIJxln8aZxMLcQXNaoKOA5CaZ5YuDqH2Hetkn2vD9M7zjE81UE5R7BEt5cOE33uguNV4pMcCtr8R1frA=="
+	//         }
+	//       ],
+	//       "lock_time": 0
+	//     }
+	//   ]
+	// }
 }
 
 // from https://blockchain.info/rawblock/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f?format=hex
@@ -94,10 +89,10 @@ const dataStr = `010000000000000000000000000000000000000000000000000000000000000
 
 var data = func() []byte {
 	data := make([]byte, hex.DecodedLen(len([]byte(dataStr))))
-	n, err := hex.Decode(data, []byte(dataStr))
+	_, err := hex.Decode(data, []byte(dataStr))
 	if err != nil {
 		panic(err)
 	}
 
-	return data[:n]
+	return data
 }()

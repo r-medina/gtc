@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+
+	"github.com/pkg/errors"
 )
 
 // Transaction represents a transaction in a block.
@@ -59,6 +61,31 @@ func (tx OutTx) String() string {
 	return buf.String()
 }
 
+// decodeTransactions decodes the list of transactoins associated with a block.
+func decodeTransactions(r io.Reader, n uint64) ([]*Transaction, error) {
+	txs := make([]*Transaction, n)
+	var i uint64
+	for i = 0; i < n; i++ {
+		tx, err := DecodeTransaction(r)
+		if err != nil {
+			return nil, errors.Wrap(err, "decodeTransaction failed")
+		}
+		txs[i] = tx
+	}
+
+	return txs, nil
+}
+
+// DecodeTransaction decodes a transaction.
+func DecodeTransaction(r io.Reader) (*Transaction, error) {
+	d := newTxDecoder(r)
+	if err := d.decode(); err != nil {
+		return nil, errors.Wrap(err, "transaction devode failed")
+	}
+
+	return &d.tx, nil
+}
+
 type txDecoder struct {
 	r  io.Reader
 	tx Transaction
@@ -71,89 +98,108 @@ func newTxDecoder(r io.Reader) *txDecoder {
 func (d *txDecoder) decode() error {
 	// read version
 	if err := read(d.r, &d.tx.Version); err != nil {
-		return err
+		return errors.Wrap(err, "reading version failed")
 	}
 
 	// read input transaction count
 	var n uint64
 	if err := readVarInt(d.r, &n); err != nil {
-		return err
+		return errors.Wrap(err, "reading tx_in count failed")
 	}
 	d.tx.InTxCount = n
 
 	// read in-transactions
 
 	d.tx.Inputs = make([]*InTx, n)
-	for i := range d.tx.Inputs {
-		tx := InTx{}
-
-		// read previous output
-		tx.PreviousOutput.Hash = make([]byte, 32)
-		if err := read(d.r, tx.PreviousOutput.Hash); err != nil {
-			return err
+	var i uint64
+	for i = 0; i < n; i++ {
+		tx, err := DecodeInTx(d.r)
+		if err != nil {
+			return errors.Wrap(err, "decodeInTx failed")
 		}
-		if err := read(d.r, &tx.PreviousOutput.Index); err != nil {
-			return err
-		}
-
-		// read script length
-		var n uint64 // shadows n
-		if err := readVarInt(d.r, &n); err != nil {
-			return err
-		}
-		tx.ScriptLength = n
-
-		// read script
-		tx.Script = make([]byte, n)
-		if err := read(d.r, tx.Script); err != nil {
-			return err
-		}
-
-		// read sequence
-		if err := read(d.r, &tx.Sequence); err != nil {
-			return err
-		}
-
-		d.tx.Inputs[i] = &tx
+		d.tx.Inputs[i] = tx
 	}
 
 	// read output transaction count
 	if err := readVarInt(d.r, &n); err != nil { // reuses n
-		return err
+		return errors.Wrap(err, "reading tx_out count failed")
 	}
 	d.tx.OutTxCount = n
 
 	// read out-transactions
 
 	d.tx.Outputs = make([]*OutTx, n)
-	for i := range d.tx.Outputs {
-		tx := OutTx{}
-
-		// read value
-		if err := read(d.r, &tx.Value); err != nil {
-			return err
+	for i = 0; i < n; i++ { // reuses i
+		tx, err := DecodeOutTx(d.r)
+		if err != nil {
+			return errors.Wrap(err, "decodeOutTx failed")
 		}
-
-		// read pk script length
-		var n uint64 // shadows n
-		if err := readVarInt(d.r, &n); err != nil {
-			return err
-		}
-		tx.PkScriptLength = n
-
-		// read pk script
-		tx.PkScript = make([]byte, n)
-		if err := read(d.r, tx.PkScript); err != nil {
-			return err
-		}
-
-		d.tx.Outputs[i] = &tx
+		d.tx.Outputs[i] = tx
 	}
 
 	// read lock time
 	if err := read(d.r, &d.tx.LockTime); err != nil {
-		return err
+		return errors.Wrap(err, "reading lock_time failed")
 	}
 
 	return nil
+}
+
+// DecodeInTx decodes an input transaction.
+func DecodeInTx(r io.Reader) (*InTx, error) {
+	tx := InTx{}
+
+	// read previous output
+	tx.PreviousOutput.Hash = make([]byte, 32)
+	if err := read(r, tx.PreviousOutput.Hash); err != nil {
+		return nil, errors.Wrap(err, "reading previous output hash failed")
+	}
+	if err := read(r, &tx.PreviousOutput.Index); err != nil {
+		return nil, errors.Wrap(err, "reading previous output index failed")
+	}
+
+	// read script length
+	var n uint64
+	if err := readVarInt(r, &n); err != nil {
+		return nil, errors.Wrap(err, "reading script length failed")
+	}
+	tx.ScriptLength = n
+
+	// read script
+	tx.Script = make([]byte, n)
+	if err := read(r, tx.Script); err != nil {
+		return nil, errors.Wrap(err, "reading script failed")
+	}
+
+	// read sequence
+	if err := read(r, &tx.Sequence); err != nil {
+		return nil, errors.Wrap(err, "reading sequence failed")
+	}
+
+	return &tx, nil
+}
+
+// DecodeOutTx decodes an output transaction.
+func DecodeOutTx(r io.Reader) (*OutTx, error) {
+	tx := OutTx{}
+
+	// read value
+	if err := read(r, &tx.Value); err != nil {
+		return nil, err
+	}
+
+	// read pk script length
+	var n uint64
+	if err := readVarInt(r, &n); err != nil {
+		return nil, errors.Wrap(err, "reading script length failed")
+	}
+	tx.PkScriptLength = n
+
+	// read pk script
+	tx.PkScript = make([]byte, n)
+	if err := read(r, tx.PkScript); err != nil {
+		return nil, errors.Wrap(err, "reading pk script failed")
+	}
+
+	return &tx, nil
 }
