@@ -1,6 +1,7 @@
 package gtc
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"io"
 
@@ -48,4 +49,11 @@ func readVarInt(r io.Reader, varint *uint64) error {
 	}
 
 	return nil
+}
+
+// Hash hashes a byte slice  using SHA256.
+func Hash(bs []byte) []byte {
+	h := sha256.New()
+	_, _ = h.Write(bs)
+	return h.Sum(nil)
 }

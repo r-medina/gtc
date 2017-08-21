@@ -3,7 +3,19 @@ package gtc
 import (
 	"bytes"
 	"testing"
+
+	"github.com/r-medina/gtc/testutil"
 )
+
+// bc is a helper function that makes a byte slice out of a hex coded string or
+// fails a test.
+func bs(t *testing.T, str string) []byte {
+	bs, err := testutil.HexStringToBytes(str)
+	if err != nil {
+		t.Fatalf("unexpected error converting hex value to bytes: %v", err)
+	}
+	return bs
+}
 
 func TestReadVarInt(t *testing.T) {
 	tests := []struct {

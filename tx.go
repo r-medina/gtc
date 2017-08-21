@@ -23,19 +23,17 @@ type Transaction struct {
 
 // InTx represents the input transactions for a transaction.
 type InTx struct {
-	PreviousOutput struct {
-		Hash  []byte `json:"hash"`
-		Index uint32 `json:"index"`
-	} `json:"prev_out"`
-	ScriptLength uint64 `json:"script_len"`
-	Script       []byte `json:"script"`
-	Sequence     uint32 `json:"seq"`
+	PreviousOutput Outpoint `json:"prev_out"`
+	ScriptLength   uint64   `json:"script_len"`
+	Script         []byte   `json:"script"`
+	Sequence       uint32   `json:"seq"`
 }
 
 func (tx InTx) String() string {
 	buf := &bytes.Buffer{}
 
 	fmt.Fprintf(buf, "Previous Hash: %x", tx.PreviousOutput.Hash)
+	fmt.Fprintf(buf, "Previous Index: %x", tx.PreviousOutput.Index)
 
 	fmt.Fprintf(buf, ", Script Length: %d", tx.ScriptLength)
 	fmt.Fprintf(buf, ", Script: %x", tx.Script)
@@ -61,6 +59,12 @@ func (tx OutTx) String() string {
 	return buf.String()
 }
 
+// Outpoint is a header in every non-coinbase transaction.
+type Outpoint struct {
+	Hash  []byte `json:"hash"`
+	Index uint32 `json:"index"`
+}
+
 // decodeTransactions decodes the list of transactoins associated with a block.
 func decodeTransactions(r io.Reader, n uint64) ([]*Transaction, error) {
 	txs := make([]*Transaction, n)
@@ -80,7 +84,7 @@ func decodeTransactions(r io.Reader, n uint64) ([]*Transaction, error) {
 func DecodeTransaction(r io.Reader) (*Transaction, error) {
 	d := newTxDecoder(r)
 	if err := d.decode(); err != nil {
-		return nil, errors.Wrap(err, "transaction devode failed")
+		return nil, errors.Wrap(err, "transaction decode failed")
 	}
 
 	return &d.tx, nil
