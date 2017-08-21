@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	prevBlockLen   = 32
-	merkleRootLen  = 32
-	prevHashLenLen = 32
+	prevBlockLen  = 32
+	merkleRootLen = 32
+	prevHashLen   = 32
 )
 
 // read just makes calling Read a little shorter.

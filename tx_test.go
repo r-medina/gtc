@@ -7,6 +7,8 @@ import (
 )
 
 func TestDecodeInTx(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		bs   []byte
 		want InTx
@@ -54,6 +56,8 @@ func TestDecodeInTx(t *testing.T) {
 }
 
 func TestDecodeOutTx(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		bs   []byte
 		want OutTx

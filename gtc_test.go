@@ -18,6 +18,8 @@ func bs(t *testing.T, str string) []byte {
 }
 
 func TestReadVarInt(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		val  []byte
 		want uint64

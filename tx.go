@@ -33,7 +33,7 @@ func (tx InTx) String() string {
 	buf := &bytes.Buffer{}
 
 	fmt.Fprintf(buf, "Previous Hash: %x", tx.PreviousOutput.Hash)
-	fmt.Fprintf(buf, "Previous Index: %x", tx.PreviousOutput.Index)
+	fmt.Fprintf(buf, ", Previous Index: %d", tx.PreviousOutput.Index)
 
 	fmt.Fprintf(buf, ", Script Length: %d", tx.ScriptLength)
 	fmt.Fprintf(buf, ", Script: %x", tx.Script)
@@ -154,7 +154,7 @@ func DecodeInTx(r io.Reader) (*InTx, error) {
 	tx := InTx{}
 
 	// read previous output
-	tx.PreviousOutput.Hash = make([]byte, 32)
+	tx.PreviousOutput.Hash = make([]byte, prevHashLen)
 	if err := read(r, tx.PreviousOutput.Hash); err != nil {
 		return nil, errors.Wrap(err, "reading previous output hash failed")
 	}
