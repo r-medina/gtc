@@ -2,4 +2,4 @@
 [![GoDoc](https://godoc.org/github.com/r-medina/gtc?status.svg)](https://godoc.org/github.com/r-medina/gtc)
 
 # gtc
-Golang BitCoin block chain tools.
+Golang Bitcoin block chain tools.
